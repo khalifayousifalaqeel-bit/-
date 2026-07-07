@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string
+    //   - email: string (required)
+    //   - photoURL: string
+    //   - createdAt: timestamp
+    //
+    // Collection: consultations
+    // Document ID: consultationId
+    // Fields:
+    //   - userId: string (required)
+    //   - symptoms: string (required)
+    //   - analysis: map (required)
+    //     - possibleCondition: string
+    //     - advice: string
+    //     - urgency: string (low, medium, high)
+    //   - sharedWithHospital: bool
+    //   - hospitalId: string
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidConsultation(data) {
+      return data.keys().hasAll(['userId', 'symptoms', 'analysis', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.symptoms is string && data.symptoms.size() < 5000 &&
+             data.analysis is map &&
+             data.analysis.keys().hasAll(['possibleCondition', 'advice', 'urgency']) &&
+             data.analysis.urgency in ['low', 'medium', 'high'] &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                    request.resource.data.uid == resource.data.uid;
+    }
+
+    match /consultations/{consultationId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidConsultation(request.resource.data);
+      allow update: if isDocOwner() && isValidConsultation(request.resource.data) &&
+                    request.resource.data.userId == resource.data.userId;
+      allow delete: if isDocOwner();
+    }
+  }
+}

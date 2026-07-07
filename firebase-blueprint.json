@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user information and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Consultation": {
+      "title": "Health Consultation",
+      "description": "Records of symptoms and AI analysis.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user" },
+        "symptoms": { "type": "string", "description": "Symptoms described by the user" },
+        "analysis": {
+          "type": "object",
+          "properties": {
+            "possibleCondition": { "type": "string" },
+            "advice": { "type": "string" },
+            "urgency": { "type": "string", "enum": ["low", "medium", "high"] }
+          }
+        },
+        "sharedWithHospital": { "type": "boolean" },
+        "hospitalId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "symptoms", "analysis", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/consultations/{consultationId}": {
+      "schema": "Consultation",
+      "description": "Individual health consultation records"
+    }
+  }
+}

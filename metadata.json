@@ -1,0 +1,8 @@
+{
+  "name": "مُساعِد صحتي الذكي",
+  "description": "تطبيق ذكي لتحليل الأعراض الصحية وتقديم نصائح أولية مع إمكانية التواصل مع الجهات الطبية.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}
